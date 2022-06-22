@@ -22,4 +22,22 @@ terraform {
 # Configure the AWS Provider
 provider "aws" {
   region = "us-east-1"
+  default_tags {
+    tags = {
+      ManagedBy  = "Terraform"
+      Project    = "nickcollins.link"
+      Section    = "frontend"
+    }
+  }
+}
+
+# -----------------
+# Module: s3
+# -----------------
+# We create an s3 bucket to store all of the static content for the website
+module "s3" {
+    source = "../modules/s3"
+
+    resource_name = "${var.resource_prefix}-content"
+    region = var.region
 }
