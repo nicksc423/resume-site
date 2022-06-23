@@ -1,3 +1,8 @@
+# Load mime types so we can set based on file extension
+locals {
+  mime_types = jsondecode(file("${path.module}/mime.json"))
+}
+
 # Create the bucket and apply any tags
 resource "aws_s3_bucket" "bucket" {
   bucket = var.resource_name
@@ -22,11 +27,12 @@ resource "aws_s3_bucket_versioning" "bucket_versioning" {
 }
 
 # Upload all files in the ../frontent/content directory to the bucket
-resource "aws_s3_bucket_object" "static_content" {
+resource "aws_s3_object" "static_content" {
   for_each = fileset("../../content", "*")
   bucket = aws_s3_bucket.bucket.id
   key = each.value
   source = "../../content/${each.value}"
+  content_type = lookup(local.mime_types, regex("\\.[^.]+$", each.value), null)
 
   # take an md5 hash of the file & if it changes terraform will mark the file for upload
   etag = filemd5("../../content/${each.value}")

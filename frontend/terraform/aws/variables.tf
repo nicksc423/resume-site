@@ -13,3 +13,8 @@ variable "region" {
 variable "resource_prefix" {
     type = string
 }
+
+# This domain is registered via Route53
+variable "dns_root_name" {
+    type = string
+}
