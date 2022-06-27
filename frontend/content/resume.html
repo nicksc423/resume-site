@@ -11,6 +11,19 @@
 	<link rel="stylesheet" type="text/css" href="https://nickcollins.link/yahoo.css" media="all" />
 	<link rel="stylesheet" type="text/css" href="https://nickcollins.link/resume.css" media="all" />
 
+	<script>
+		fetch("https://api.nickcollins.link/incrementViewCount")
+			.then(function (response) {
+				return response.json();
+			})
+			.then(function (json) {
+				document.querySelector("#viewcount").innerHTML = "Total view count: " + json;
+			})
+			.catch(function (error) {
+				console.log("Error: " + error);
+			});
+	</script>
+
 </head>
 <body>
 
@@ -188,6 +201,7 @@
 
 		<div id="ft">
 			<p>Nick Collins &mdash; <a href="mailto:nicksc423@gmail.com">nicksc423@gmail.com</a> &mdash; (323)-482-7366</p>
+			<p id="viewcount"></p>
 		</div><!--// footer -->
 
 	</div><!-- // inner -->
