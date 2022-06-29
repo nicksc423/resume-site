@@ -42,13 +42,21 @@
           <div class="yui">
 						<div class="yui-u about">
 							<h2>About This Site</h2>
+							<div class="yui-u">
+								<p>
+									This site was made to not only show my resume but also to display some of the DevOps techniques that I have learned over the years.
+								</p>
+								<p>
+									This website is entirely hosted in the AWS cloud where it is made up of multiple s3 buckets, a cloudfront CDN, a Lambda function, a DynamoDB Database, an API Gateway, a few DNS records, and an SSL cert managed by Route53.  While this is a greatly simplified implementation of what is possible with the cloud, it serves as a good example of what is possible.  We are able to safely and securely serve static content with S3 and Cloudfront while making API calls to a backend service with APIGatway.  This backend service is able to run all without having to manage any virtual machines.  All of this is provisioned via Terraform scripts so that I can safely and predictably create, change, and improve any infrastructure in AWS as I need.
+								</p>
+								<p>
+									Terraform (and infrastructure as code by extension) greatly helps with cost, speed, and risk.  The cost reduction comes from removing the manual component of privioning infrastructure, devs are able to focus their efforts on their tasks rather than wrangling infrastrcture.  Automating the provisioning of infrastructure also enables speed through faster execution, with a well defined Terraform module creating a properly configured virtual machine, kubernetes cluster, or databse becomes a trivial task. Automation also removes the risk associated with human error, like manual misconfiguration; removing this can decrease downtime and increase reliability. In addition defining all of your infrastrcture through code can help provide visibility into your cloud environment allowing you to track and organize your projects effectivly.
+								</p>
+								<p>
+									All of the code for this website can be found on my Github <a href="https://github.com/nicksc423/resume-site">here</a> if you want a more in-depth look.
+								</p>
+							</div>
 						</div>
-						<div class="yui-u">
-							<p>
-								Under Development
-							</p>
-						</div>
-
 					</div><!--// .yui-gf -->
 				</div><!--// .yui-b -->
 			</div><!--// yui-main -->

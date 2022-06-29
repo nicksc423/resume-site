@@ -28,12 +28,12 @@ resource "aws_s3_bucket_versioning" "bucket_versioning" {
 
 # Upload all files in the ../frontent/content directory to the bucket
 resource "aws_s3_object" "static_content" {
-  for_each = fileset("../../content", "*")
+  for_each = var.content
   bucket = aws_s3_bucket.bucket.id
   key = each.value
-  source = "../../content/${each.value}"
+  source = "${var.contentPath}${each.value}"
   content_type = lookup(local.mime_types, regex("\\.[^.]+$", each.value), null)
 
   # take an md5 hash of the file & if it changes terraform will mark the file for upload
-  etag = filemd5("../../content/${each.value}")
+  etag = filemd5("${var.contentPath}${each.value}")
 }

@@ -39,6 +39,8 @@ module "s3" {
 
     resource_name = "${var.resource_prefix}-content"
     region = var.region
+    content = fileset("../../content/frontend/", "*")
+    contentPath = "../../content/frontend/"
 }
 
 # -----------------

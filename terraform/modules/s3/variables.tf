@@ -7,3 +7,13 @@ variable "resource_name" {
 variable "region" {
     type = string
 }
+
+# Content to upload to the bucket
+variable "content" {
+    default = {}
+}
+
+# Path to the content, this will be depricated when I add CICD
+variable "contentPath" {
+    default = ""
+}
