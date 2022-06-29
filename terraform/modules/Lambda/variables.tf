@@ -14,3 +14,6 @@ variable "accountID" {
 variable "dynamoTableName" {
     type = string
 }
+
+variable "bucket" {
+}

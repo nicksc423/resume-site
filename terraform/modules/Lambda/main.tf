@@ -2,17 +2,12 @@ data "archive_file" "lambda_code" {
   type = "zip"
 
   source_dir  = "../../content/lambda"
-  output_path = "${path.module}/lambda.zip"
-}
-
-# Create the bucket and apply any tags
-resource "aws_s3_bucket" "lambda_bucket" {
-  bucket = var.resource_name
+  output_path = "../../content/out/lambda.zip"
 }
 
 # Upload to s3
 resource "aws_s3_object" "lambda_s3" {
-  bucket = aws_s3_bucket.lambda_bucket.id
+  bucket = var.bucket.id
 
   key    = "lambda.zip"
   source = data.archive_file.lambda_code.output_path
@@ -20,29 +15,11 @@ resource "aws_s3_object" "lambda_s3" {
   etag = filemd5(data.archive_file.lambda_code.output_path)
 }
 
-# Block all public access to the bucket and it's contents
-resource "aws_s3_bucket_public_access_block" "bucket_block_all_public_access" {
-  bucket = aws_s3_bucket.lambda_bucket.id
-
-  block_public_acls = true
-  block_public_policy = true
-  ignore_public_acls = true
-  restrict_public_buckets = true
-}
-
-# Enable versioning
-resource "aws_s3_bucket_versioning" "bucket_versioning" {
-  bucket = aws_s3_bucket.lambda_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
 # Create the Lambda
 resource "aws_lambda_function" "lambda" {
   function_name = "incrementAndReturnViewcount"
 
-  s3_bucket = aws_s3_bucket.lambda_bucket.id
+  s3_bucket = var.bucket.id
   s3_key    = aws_s3_object.lambda_s3.key
 
   runtime = "python3.9"

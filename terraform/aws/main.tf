@@ -10,7 +10,7 @@
 terraform {
   backend "s3" {
     bucket = "nickcollins.link-tfstate"
-    key    = "nickcollins.link-backend-tfstate"
+    key    = "nickcollins.link-tfstate"
     region = "us-east-1"
   }
 }
@@ -26,9 +26,46 @@ provider "aws" {
     tags = {
       ManagedBy  = "Terraform"
       Project    = "nickcollins.link"
-      Section    = "backend"
     }
   }
+}
+
+# -----------------
+# Module: s3
+# -----------------
+# We create an s3 bucket to store all of the static content for the website
+module "s3" {
+    source = "../modules/s3"
+
+    resource_name = "${var.resource_prefix}-content"
+    region = var.region
+}
+
+# -----------------
+# Module: Route53
+# -----------------
+# We setup Route53 for our website.
+# Note that Terraform will not register the domain for you, for more information look at modules/route53/main.tf
+# This is just to automate the creation/deletion of records
+module "route53" {
+    source = "../modules/route53"
+
+    dns_root_name = var.dns_root_name
+}
+
+# -----------------
+# Module: cloudfront
+# -----------------
+# We make a cloudfront distribution to host our static website for us.
+
+module "cloudfront" {
+    source = "../modules/cloudfront"
+
+    resource_name = "${var.resource_prefix}-content"
+    bucket = module.s3.bucket
+    root_object = "resume.html"
+    dns_name = var.dns_root_name
+    ssl_cert_arn = module.route53.cert_valid.certificate_arn
 }
 
 # -----------------
@@ -42,6 +79,18 @@ module "dynamodb" {
 }
 
 # -----------------
+# Module: s3
+# -----------------
+# We make a bucket just for our Lambda code
+# Needs to be separate because cloudfront is hosting everything in the content bucket
+module "lambda_bucket" {
+    source = "../modules/s3"
+
+    resource_name = "${var.resource_prefix}-lambda"
+    region = var.region
+}
+
+# -----------------
 # Module: Lambda
 # -----------------
 # We create lambda to act as the backend, contains a Lambda, API Gateway, and DynamoDB instance
@@ -52,6 +101,7 @@ module "lambda" {
     region = var.region
     accountID = var.accountID
     dynamoTableName = module.dynamodb.table.name
+    bucket = module.lambda_bucket.bucket
 }
 
 # -----------------
@@ -63,7 +113,7 @@ module "apigateway" {
 
     resource_name = "${var.resource_prefix}-apigw"
     lambda = module.lambda.lambda
-    certificate_arn = var.certificate_arn
+    certificate_arn = module.route53.cert.arn
     dns_root_name = var.dns_root_name
-    r53_zoneID = var.r53_zoneID
+    r53_zoneID = module.route53.r53_zone.zone_id
 }

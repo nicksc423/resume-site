@@ -7,6 +7,7 @@
 # This is the region that all resources are made in
 variable "region" {
     type = string
+    default = "us-east-1"
 }
 
 # A prefix for naming resources. Adding the prefix ensures uniqueness and also potentially helps distinguish our own resources from each other
@@ -21,17 +22,5 @@ variable "dns_root_name" {
 
 # This is our accountID
 variable "accountID" {
-    type = string
-}
-
-# This is the certificate arn
-# TODO: This is bad, but will be refactored out later
-variable "certificate_arn" {
-    type = string
-}
-
-# This is the route53 zone id
-# TODO: This is bad, but will be refactored out later
-variable "r53_zoneID" {
     type = string
 }

@@ -22,10 +22,10 @@ resource "aws_dynamodb_table_item" "viewcount" {
 }
 ITEM
 
-lifecycle {
-  ignore_changes = [
-    # Ignore changes to item
-    item,
-  ]
-}
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to item
+      item
+    ]
+  }
 }

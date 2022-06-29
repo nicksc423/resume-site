@@ -2,6 +2,11 @@
 resource "aws_apigatewayv2_api" "apigw" {
   name          = var.resource_name
   protocol_type = "HTTP"
+  disable_execute_api_endpoint = true
+  cors_configuration {
+    allow_methods     = ["GET"]
+    allow_origins     = ["https://nickcollins.link"]
+  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda_integration" {

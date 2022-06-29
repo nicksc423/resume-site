@@ -78,6 +78,13 @@ resource "aws_cloudfront_distribution" "distribution" {
     minimum_protocol_version = "TLSv1.2_2021"
     ssl_support_method = "sni-only"
   }
+
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to cache invalidations
+      in_progress_validation_batches
+    ]
+  }
 }
 
 # We load in our root route53 zone

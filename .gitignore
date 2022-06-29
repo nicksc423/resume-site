@@ -1,4 +1,11 @@
 # ---------------
+# Project files to ignore
+# ---------------
+
+# ignore the out directory in content/
+content/out/**
+
+# ---------------
 # Terraform files to ignore
 # ---------------
 
