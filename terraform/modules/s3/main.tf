@@ -36,4 +36,11 @@ resource "aws_s3_object" "static_content" {
 
   # take an md5 hash of the file & if it changes terraform will mark the file for upload
   etag = filemd5("${var.contentPath}${each.value}")
+
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to versionID
+      version_id
+    ]
+  }
 }

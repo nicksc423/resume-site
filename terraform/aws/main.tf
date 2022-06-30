@@ -24,10 +24,27 @@ provider "aws" {
   region = "us-east-1"
   default_tags {
     tags = {
-      ManagedBy  = "Terraform"
-      Project    = "nickcollins.link"
+      ManagedBy            = "Terraform"
+      Project              = "nickcollins.link"
     }
   }
+}
+
+# -----------------
+# Module: GitHub
+# -----------------
+# We setup OIDC for GitHub Actions, look in modules/github/main.tf for more information
+module "github" {
+    source = "../modules/github"
+
+    repositories = ["repo:nicksc423/resume-site:*"]
+    actions = [
+      "cloudfront:CreateInvalidation"
+    ]
+    permitted_buckets = [
+      module.s3.bucket.arn,
+      module.lambda_bucket.bucket.arn
+    ]
 }
 
 # -----------------

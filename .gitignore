@@ -2,8 +2,9 @@
 # Project files to ignore
 # ---------------
 
-# ignore the out directory in content/
+# ignore the out directory in content & terraform
 content/out/**
+terraform/out/**
 
 # ---------------
 # Terraform files to ignore

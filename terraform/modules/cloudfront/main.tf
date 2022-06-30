@@ -79,6 +79,10 @@ resource "aws_cloudfront_distribution" "distribution" {
     ssl_support_method = "sni-only"
   }
 
+  tags = {
+    permit-github-action = "true"
+  }
+
   lifecycle {
     ignore_changes = [
       # Ignore changes to cache invalidations
