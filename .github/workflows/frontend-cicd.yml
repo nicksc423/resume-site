@@ -29,6 +29,11 @@ jobs:
     - name: Copy files to the s3 website content bucket
       run:
         aws s3 sync . s3://${{ secrets.AWS_S3_BUCKET_NAME }}/
+    
+    # Unsure if recreating the tags is the correct thing to do, specificly the {ManagedBy: Terraform} tag since they are no longer managed by Terraform after creation
+    - name: Update all the tags
+      run:
+        aws s3api list-objects --bucket ${{ secrets.AWS_S3_BUCKET_NAME }} --query 'Contents[].{Key:Key}' --output text | xargs -n 1 aws s3api put-object-tagging  --bucket ${{ secrets.AWS_S3_BUCKET_NAME }} --tagging 'TagSet=[{Key=ManagedBy,Value=Terraform},{Key=Project,Value=nickcollins.link}]' --key
         
     # Ideally this would be manual since invalidating the cache isn't required for every update
     - name: Invalidate the Cloudfront Cache
