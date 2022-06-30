@@ -31,4 +31,4 @@ jobs:
     # Ideally this would be manual since invalidating the cache isn't required for every update
     - name: Invalidate the Cloudfront Cache
       run:
-        aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_ID }} --paths /*
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_ID }} --paths '/*'
