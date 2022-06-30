@@ -13,6 +13,9 @@ defaults:
 
 jobs:
   deploy:
+    permissions:
+      id-token: write
+      contents: read
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -20,8 +23,7 @@ jobs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@master
       with:
-        aws-access-key-id: ${{ secrets. AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets. AWS_SECRET_ACCESS_KEY }}
+        role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
         aws-region: us-east-1
 
     - name: Copy files to the s3 website content bucket
