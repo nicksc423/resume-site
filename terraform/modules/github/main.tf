@@ -35,12 +35,11 @@ resource "aws_iam_role" "github_actions" {
   assume_role_policy = data.aws_iam_policy_document.github_actions_assume_role.json
 }
 
-# Grant permissions to our IAM role
+# Grant permissions to our IAM role for authorization-based tags
 # note the condition, only infra tagged with permit-github-action: true can be affected
-# The one caveat to the above is that s3 does not support conditional permissions for s3
 data "aws_iam_policy_document" "github_actions" {
   statement {
-    actions = var.actions
+    actions = var.tagged_actions
     resources = ["*"]
     condition {
       test     = "StringEquals"
@@ -53,7 +52,7 @@ data "aws_iam_policy_document" "github_actions" {
 
 resource "aws_iam_policy" "github_actions" {
   name        = "github-actions"
-  description = "Grant Github Actions the ability to push to ECR"
+  description = "Grant Github Actions the ability to affect objects that support authorization-based tags"
   policy      = data.aws_iam_policy_document.github_actions.json
 }
 
@@ -62,35 +61,21 @@ resource "aws_iam_role_policy_attachment" "github_actions" {
   policy_arn = aws_iam_policy.github_actions.arn
 }
 
-# This is a super ugly way to make a list of all our buckets and att '/*' to the end
-# so they work for our IAM policy.  Needs to be rewritten
-locals {
-  permitted_bucket_objects = formatlist("%s/*", var.permitted_buckets)
-}
-
-# Since AWS does not allow conditional permissions for s3, we restrict s3 permissions
-# on a per bucket basis
-data "aws_iam_policy_document" "github_s3_actions" {
+# Since not all of AWS supports authorization-based tags we make a separate policy for those objects with defined resources
+data "aws_iam_policy_document" "github_authorized_actions" {
   statement {
-    actions = [
-      "s3:ListBucket",
-      "s3:GetBucketLocation",
-      "s3:PutObject",
-      "s3:GetObject",
-      "s3:DeleteObject",
-      "s3:PutObjectTagging"
-    ]
-    resources = concat(var.permitted_buckets, local.permitted_bucket_objects)
+    actions = var.authorized_actions
+    resources = var.authorized_objects
   }
 }
 
-resource "aws_iam_policy" "github_s3_actions" {
-  name        = "github-s3-actions"
-  description = "Grant Github Actions the ability to push to ECR"
-  policy      = data.aws_iam_policy_document.github_s3_actions.json
+resource "aws_iam_policy" "github_authorized_actions" {
+  name        = "github_authorized_actions"
+  description = "Grant Github Actions the ability to affect objects that don't support authorization-based tags"
+  policy      = data.aws_iam_policy_document.github_authorized_actions.json
 }
 
-resource "aws_iam_role_policy_attachment" "github_s3_actions" {
+resource "aws_iam_role_policy_attachment" "github_authorized_actions" {
   role       = aws_iam_role.github_actions.name
-  policy_arn = aws_iam_policy.github_s3_actions.arn
+  policy_arn = aws_iam_policy.github_authorized_actions.arn
 }

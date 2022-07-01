@@ -38,13 +38,24 @@ module "github" {
     source = "../modules/github"
 
     repositories = ["repo:nicksc423/resume-site:*"]
-    actions = [
-      "cloudfront:CreateInvalidation",
+    tagged_actions = [
+      "cloudfront:CreateInvalidation"
+    ]
+    authorized_actions= [
+      "s3:ListBucket",
+      "s3:GetBucketLocation",
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+      "s3:PutObjectTagging",
       "lambda:UpdateFunctionCode"
     ]
-    permitted_buckets = [
+    authorized_objects = [
       module.s3.bucket.arn,
-      module.lambda_bucket.bucket.arn
+      "${module.s3.bucket.arn}/*",
+      module.lambda_bucket.bucket.arn,
+      "${module.lambda_bucket.bucket.arn}/*",
+      module.lambda.lambda.arn
     ]
 }
 

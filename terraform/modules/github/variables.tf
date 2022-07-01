@@ -4,11 +4,16 @@ variable "repositories" {
 }
 
 # List of the actions to grant access to GitHub actions
-variable "actions" {
+variable "tagged_actions" {
 
 }
 
-# List of the buckets to grant access to GitHub actions
-variable "permitted_buckets" {
+# List of the actions to grant access to GitHub actions
+variable "authorized_actions" {
+
+}
+
+# List of the objects to grant access to GitHub actions if they don't support authorization-based tags
+variable "authorized_objects" {
 
 }
