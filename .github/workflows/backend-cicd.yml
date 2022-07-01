@@ -32,7 +32,7 @@ jobs:
 
     - name: Zip lambda
       run:
-        zip out/lambda.zip lambda/lambda.py
+        zip -j out/lambda.zip lambda/lambda.py
 
     - name: Copy files to the s3 website content bucket
       run:
