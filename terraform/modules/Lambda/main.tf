@@ -28,6 +28,10 @@ resource "aws_lambda_function" "lambda" {
   source_code_hash = data.archive_file.lambda_code.output_base64sha256
 
   role = aws_iam_role.lambda_role.arn
+
+  tags = {
+    permit-github-action = "true"
+  }
 }
 
 resource "aws_iam_role" "lambda_role" {

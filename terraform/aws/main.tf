@@ -39,7 +39,8 @@ module "github" {
 
     repositories = ["repo:nicksc423/resume-site:*"]
     actions = [
-      "cloudfront:CreateInvalidation"
+      "cloudfront:CreateInvalidation",
+      "lambda:UpdateFunctionCode"
     ]
     permitted_buckets = [
       module.s3.bucket.arn,

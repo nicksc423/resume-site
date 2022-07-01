@@ -1,0 +1,44 @@
+name: Backend-CICD
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'content/lambda/**'
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: content/lambda
+
+jobs:
+  deploy:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@master
+      with:
+        role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
+        aws-region: us-east-1
+
+    - name: Zip lambda function
+      run:
+        zip -r ../out/lambda.zip lambda.py
+
+    - name: Copy files to the s3 website content bucket
+      run:
+        aws s3 sync ../out/lambda.zip s3://${{ secrets.AWS_LAMBDA_BUCKET_NAME }}/
+
+    # Unsure if recreating the tags is the correct thing to do, specificly the {ManagedBy: Terraform} tag since they are no longer managed by Terraform after creation
+    - name: Update all the tags
+      run:
+        aws s3api list-objects --bucket ${{ secrets.AWS_LAMBDA_BUCKET_NAME }} --query 'Contents[].{Key:Key}' --output text | xargs -n 1 aws s3api put-object-tagging  --bucket ${{ secrets.AWS_S3_BUCKET_NAME }} --tagging 'TagSet=[{Key=ManagedBy,Value=Terraform},{Key=Project,Value=nickcollins.link}]' --key
+
+    - name: Upload to lambda
+      run:
+        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --s3-bucket ${{ secrets.AWS_LAMBDA_BUCKET_NAME }} --s3-key lambda.zip
