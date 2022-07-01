@@ -27,8 +27,10 @@ jobs:
         aws-region: us-east-1
 
     - name: Zip lambda function
-      run:
-        zip ./lambda/lambda.py ./out/lambda.zip
+      uses: vimtor/action-zip@v1
+      with:
+        files: lambda/lambda.py
+        dest: out/lambda.zip
 
     - name: Copy files to the s3 website content bucket
       run:
