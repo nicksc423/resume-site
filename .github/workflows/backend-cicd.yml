@@ -20,16 +20,24 @@ jobs:
     steps:
     - uses: actions/checkout@master
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@master
-      with:
-        role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
-        aws-region: us-east-1
+    # - name: Configure AWS Credentials
+    #   uses: aws-actions/configure-aws-credentials@master
+    #   with:
+    #     role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
+    #     aws-region: us-east-1
 
-    - name: Zip lambda function
-      uses: montudor/action-zip@v1
-      with:
-        args: zip -qq -r dir.zip lambda
+    # - name: Zip lambda function
+    #   uses: montudor/action-zip@v1
+    #   with:
+    #     args: zip out/
+
+    - name: Make output directory
+      run:
+        mkdir out
+
+    - name: Zip lambda
+      run:
+        zip out/lambda.zip lambda/lambda.py
 
     - name: Copy files to the s3 website content bucket
       run:
