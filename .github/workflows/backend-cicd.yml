@@ -28,7 +28,7 @@ jobs:
 
     - name: Zip lambda function
       run:
-        zip ./out/lambda.zip ./lambda/lambda.py
+        zip ./lambda/lambda.py ./out/lambda.zip
 
     - name: Copy files to the s3 website content bucket
       run:
