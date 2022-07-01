@@ -29,11 +29,9 @@ jobs:
     - name: Zip lambda function
       uses: vimtor/action-zip@v1
       with:
-        files: lambda/lambda.py
+        files: lambda/
         dest: out/lambda.zip
 
     - name: Copy files to the s3 website content bucket
       run:
         ls *
-
-    
