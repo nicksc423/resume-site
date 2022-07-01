@@ -34,7 +34,7 @@ jobs:
 
     - name: Copy files to the s3 website content bucket
       run:
-        aws s3 sync ./out/ s3://${{ secrets.AWS_LAMBDA_BUCKET_NAME }}/
+        aws s3 sync out/ s3://${{ secrets.AWS_LAMBDA_BUCKET_NAME }}/
 
     # Unsure if recreating the tags is the correct thing to do, specificly the {ManagedBy: Terraform} tag since they are no longer managed by Terraform after creation
     - name: Update all the tags
