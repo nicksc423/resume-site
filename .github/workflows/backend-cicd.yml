@@ -20,16 +20,11 @@ jobs:
     steps:
     - uses: actions/checkout@master
 
-    # - name: Configure AWS Credentials
-    #   uses: aws-actions/configure-aws-credentials@master
-    #   with:
-    #     role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
-    #     aws-region: us-east-1
-
-    # - name: Zip lambda function
-    #   uses: montudor/action-zip@v1
-    #   with:
-    #     args: zip out/
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@master
+      with:
+        role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
+        aws-region: us-east-1
 
     - name: Make output directory
       run:
@@ -41,4 +36,13 @@ jobs:
 
     - name: Copy files to the s3 website content bucket
       run:
-        ls *
+        aws s3 sync ./out/ s3://${{ secrets.AWS_LAMBDA_BUCKET_NAME }}/
+
+    # Unsure if recreating the tags is the correct thing to do, specificly the {ManagedBy: Terraform} tag since they are no longer managed by Terraform after creation
+    - name: Update all the tags
+      run:
+        aws s3api list-objects --bucket ${{ secrets.AWS_LAMBDA_BUCKET_NAME }} --query 'Contents[].{Key:Key}' --output text | xargs -n 1 aws s3api put-object-tagging  --bucket ${{ secrets.AWS_LAMBDA_BUCKET_NAME }} --tagging 'TagSet=[{Key=ManagedBy,Value=Terraform},{Key=Project,Value=nickcollins.link}]' --key
+
+    - name: Upload to lambda
+      run:
+        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --s3-bucket ${{ secrets.AWS_LAMBDA_BUCKET_NAME }} --s3-key lambda.zip
