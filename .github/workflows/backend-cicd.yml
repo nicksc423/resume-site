@@ -9,7 +9,7 @@ on:
 
 defaults:
   run:
-    working-directory: content/lambda
+    working-directory: content/
 
 jobs:
   deploy:
@@ -28,11 +28,11 @@ jobs:
 
     - name: Zip lambda function
       run:
-        zip -r ../out/lambda.zip lambda.py
+        zip -r out/lambda.zip lambda/lambda.py
 
     - name: Copy files to the s3 website content bucket
       run:
-        aws s3 sync ../out/lambda.zip s3://${{ secrets.AWS_LAMBDA_BUCKET_NAME }}/
+        aws s3 sync out/ s3://${{ secrets.AWS_LAMBDA_BUCKET_NAME }}/
 
     # Unsure if recreating the tags is the correct thing to do, specificly the {ManagedBy: Terraform} tag since they are no longer managed by Terraform after creation
     - name: Update all the tags
