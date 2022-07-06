@@ -39,6 +39,18 @@ jobs:
         docker build -t ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} .
         docker push ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
 
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
     - name: Update Lambda
       run:
         aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --image-uri ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
