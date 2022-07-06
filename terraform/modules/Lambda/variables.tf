@@ -1,4 +1,3 @@
-# Name of the bucket
 variable "resource_name" {
     type = string
 }
@@ -15,5 +14,10 @@ variable "dynamoTableName" {
     type = string
 }
 
-variable "bucket" {
+variable "repository_url" {
+    type = string
+}
+
+variable "lambda_image_id" {
+    type = string
 }

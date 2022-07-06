@@ -1,34 +1,13 @@
-data "archive_file" "lambda_code" {
-  type = "zip"
-
-  source_dir  = "../../content/lambda"
-  output_path = "../../content/out/lambda.zip"
-}
-
-# Upload to s3
-resource "aws_s3_object" "lambda_s3" {
-  bucket = var.bucket.id
-
-  key    = "lambda.zip"
-  source = data.archive_file.lambda_code.output_path
-
-  etag = filemd5(data.archive_file.lambda_code.output_path)
-}
-
 # Create the Lambda
 resource "aws_lambda_function" "lambda" {
   function_name = "incrementAndReturnViewcount"
 
-  s3_bucket = var.bucket.id
-  s3_key    = aws_s3_object.lambda_s3.key
-
-  runtime = "python3.9"
-  handler = "lambda.lambda_handler"
-
-  source_code_hash = data.archive_file.lambda_code.output_base64sha256
+  image_uri = "${var.repository_url}@${var.lambda_image_id}"
+  package_type = "Image"
 
   role = aws_iam_role.lambda_role.arn
 
+  timeout = 300
   tags = {
     permit-github-action = "true"
   }
