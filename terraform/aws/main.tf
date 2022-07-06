@@ -104,7 +104,7 @@ module "cloudfront" {
 module "ecr" {
     source = "../modules/ecr"
 
-    resource_name = "${var.resource_prefix}-registry"
+    resource_name = "${var.resource_prefix}-lambda"
     region = var.region
     accountID = var.accountID
 }

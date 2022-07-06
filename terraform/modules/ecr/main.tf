@@ -26,8 +26,8 @@ resource null_resource ecr_image {
    command = <<EOF
            aws ecr get-login-password --region ${var.region} | docker login --username AWS --password-stdin ${var.accountID}.dkr.ecr.${var.region}.amazonaws.com
            cd ../../content/lambda/
-           docker build -t ${aws_ecr_repository.repo.repository_url}/lambda:init .
-           docker push ${aws_ecr_repository.repo.repository_url}/lambda:init
+           docker build -t ${aws_ecr_repository.repo.repository_url}:init .
+           docker push ${aws_ecr_repository.repo.repository_url}:init
        EOF
  }
 }

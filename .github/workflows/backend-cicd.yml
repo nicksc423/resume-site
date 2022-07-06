@@ -32,9 +32,9 @@ jobs:
 
     - name: Build Image
       run: |
-        docker build -t ${{ secrets.ECR_URL }}/lambda:${{ steps.vars.outputs.sha_short }} .
-        docker push ${{ secrets.ECR_URL }}/lambda:${{ steps.vars.outputs.sha_short }}
+        docker build -t ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} .
+        docker push ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
 
     - name: Update Lambda
       run:
-        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --image-uri ${{ secrets.ECR_URL }}/lambda:${{ steps.vars.outputs.sha_short }}
+        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --image-uri ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
