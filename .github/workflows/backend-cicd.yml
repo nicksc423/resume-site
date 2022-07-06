@@ -41,6 +41,15 @@ jobs:
         docker build -t ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} .
         docker push ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
 
+    - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Snapshots
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'image'
+        format: 'github'
+        output: 'dependency-results.sbom.json'
+        image-ref: ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
+        github-pat: ${{ secrets.GH_PAT }}
+
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
