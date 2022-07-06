@@ -36,15 +36,6 @@ jobs:
       id: vars
       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
-    - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Snapshots
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        format: 'github'
-        output: 'dependency-results.sbom.json'
-        image-ref: '.'
-        github-pat: ${{ secrets.GH_PAT }}
-
     - name: Build Image
       run: |
         docker build -t ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} .
