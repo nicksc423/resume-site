@@ -26,6 +26,10 @@ jobs:
         role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
         aws-region: us-east-1
 
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
     - name: Set outputs
       id: vars
       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
