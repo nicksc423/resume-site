@@ -12,3 +12,8 @@ variable "region" {
 variable "accountID" {
     type = string
 }
+
+# iam role for github actions
+variable iam_role {
+
+}

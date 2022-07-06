@@ -17,3 +17,8 @@ variable "content" {
 variable "contentPath" {
     default = ""
 }
+
+# iam role for github actions 
+variable iam_role {
+
+}

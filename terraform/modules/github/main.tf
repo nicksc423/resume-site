@@ -60,22 +60,3 @@ resource "aws_iam_role_policy_attachment" "github_actions" {
   role       = aws_iam_role.github_actions.name
   policy_arn = aws_iam_policy.github_actions.arn
 }
-
-# Since not all of AWS supports authorization-based tags we make a separate policy for those objects with defined resources
-data "aws_iam_policy_document" "github_authorized_actions" {
-  statement {
-    actions = var.authorized_actions
-    resources = var.authorized_objects
-  }
-}
-
-resource "aws_iam_policy" "github_authorized_actions" {
-  name        = "github_authorized_actions"
-  description = "Grant Github Actions the ability to affect objects that don't support authorization-based tags"
-  policy      = data.aws_iam_policy_document.github_authorized_actions.json
-}
-
-resource "aws_iam_role_policy_attachment" "github_authorized_actions" {
-  role       = aws_iam_role.github_actions.name
-  policy_arn = aws_iam_policy.github_authorized_actions.arn
-}

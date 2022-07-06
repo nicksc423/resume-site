@@ -21,3 +21,8 @@ variable "repository_url" {
 variable "lambda_image_id" {
     type = string
 }
+
+# iam role for github actions
+variable iam_role {
+
+}
