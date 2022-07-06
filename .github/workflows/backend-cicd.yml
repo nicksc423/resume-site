@@ -11,6 +11,12 @@ defaults:
   run:
     working-directory: content/lambda/
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  security-events: write
+
 jobs:
   deploy:
     permissions:
@@ -47,7 +53,7 @@ jobs:
         output: 'trivy-results.sarif'
 
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v1
+      uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: 'trivy-results.sarif'
 
