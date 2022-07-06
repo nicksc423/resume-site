@@ -6,10 +6,14 @@ resource "aws_ecr_repository" "repo" {
     scan_on_push = true
   }
 
-  # Add later with KMS config
+  # TODO: Add with KMS config
   # encryption_configuration {
   #
   # }
+
+  tags = {
+    permit-github-action = "true"
+  }
 }
 
 resource null_resource ecr_image {
