@@ -1,24 +1,15 @@
+# Name of the container repo
 variable "resource_name" {
     type = string
 }
 
+# AWS region
 variable "region" {
     type = string
 }
 
+# The account id
 variable "accountID" {
-    type = string
-}
-
-variable "dynamoTableName" {
-    type = string
-}
-
-variable "repository_url" {
-    type = string
-}
-
-variable "lambda_image_id" {
     type = string
 }
 

@@ -41,22 +41,6 @@ module "github" {
     tagged_actions = [
       "cloudfront:CreateInvalidation"
     ]
-    authorized_actions= [
-      "s3:ListBucket",
-      "s3:GetBucketLocation",
-      "s3:PutObject",
-      "s3:GetObject",
-      "s3:DeleteObject",
-      "s3:PutObjectTagging",
-      "lambda:UpdateFunctionCode"
-    ]
-    authorized_objects = [
-      module.s3.bucket.arn,
-      "${module.s3.bucket.arn}/*",
-      module.lambda_bucket.bucket.arn,
-      "${module.lambda_bucket.bucket.arn}/*",
-      module.lambda.lambda.arn
-    ]
 }
 
 # -----------------
@@ -70,6 +54,7 @@ module "s3" {
     region = var.region
     content = fileset("../../content/frontend/", "*")
     contentPath = "../../content/frontend/"
+    iam_role = module.github.iam_role
 }
 
 # -----------------
@@ -100,6 +85,19 @@ module "cloudfront" {
 }
 
 # -----------------
+# Module: ECR
+# -----------------
+# We make an ECR instance to store our Docker image for our lambda
+module "ecr" {
+    source = "../modules/ecr"
+
+    resource_name = "${var.resource_prefix}-lambda"
+    region = var.region
+    accountID = var.accountID
+    iam_role = module.github.iam_role
+}
+
+# -----------------
 # Module: DynamoDB
 # -----------------
 # We create a DynamoDB instance to store the view count
@@ -107,18 +105,6 @@ module "dynamodb" {
     source = "../modules/DynamoDB"
 
     resource_name = "${var.resource_prefix}-ddb"
-}
-
-# -----------------
-# Module: s3
-# -----------------
-# We make a bucket just for our Lambda code
-# Needs to be separate because cloudfront is hosting everything in the content bucket
-module "lambda_bucket" {
-    source = "../modules/s3"
-
-    resource_name = "${var.resource_prefix}-lambda"
-    region = var.region
 }
 
 # -----------------
@@ -132,7 +118,9 @@ module "lambda" {
     region = var.region
     accountID = var.accountID
     dynamoTableName = module.dynamodb.table.name
-    bucket = module.lambda_bucket.bucket
+    repository_url = module.ecr.ecr.repository_url
+    lambda_image_id = module.ecr.image.id
+    iam_role = module.github.iam_role
 }
 
 # -----------------

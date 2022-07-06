@@ -9,13 +9,15 @@ on:
 
 defaults:
   run:
-    working-directory: content/
+    working-directory: content/lambda/
 
 jobs:
   deploy:
     permissions:
-      id-token: write
       contents: read
+      packages: write
+      id-token: write
+      security-events: write
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -26,23 +28,31 @@ jobs:
         role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
         aws-region: us-east-1
 
-    - name: Make output directory
-      run:
-        mkdir out
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Zip lambda
-      run:
-        zip -j out/lambda.zip lambda/lambda.py
+    - name: Set outputs
+      id: vars
+      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
-    - name: Copy files to the s3 website content bucket
-      run:
-        aws s3 sync ./out/ s3://${{ secrets.AWS_LAMBDA_BUCKET_NAME }}/
+    - name: Build Image
+      run: |
+        docker build -t ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} .
+        docker push ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
 
-    # Unsure if recreating the tags is the correct thing to do, specificly the {ManagedBy: Terraform} tag since they are no longer managed by Terraform after creation
-    - name: Update all the tags
-      run:
-        aws s3api list-objects --bucket ${{ secrets.AWS_LAMBDA_BUCKET_NAME }} --query 'Contents[].{Key:Key}' --output text | xargs -n 1 aws s3api put-object-tagging  --bucket ${{ secrets.AWS_LAMBDA_BUCKET_NAME }} --tagging 'TagSet=[{Key=ManagedBy,Value=Terraform},{Key=Project,Value=nickcollins.link}]' --key
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
 
-    - name: Upload to lambda
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Update Lambda
       run:
-        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --s3-bucket ${{ secrets.AWS_LAMBDA_BUCKET_NAME }} --s3-key lambda.zip
+        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --image-uri ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
