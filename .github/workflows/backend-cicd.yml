@@ -58,18 +58,22 @@ jobs:
     - name: Install Cosign GH action
       uses: sigstore/cosign-installer@main
 
-    - name: Build Image
+    - name: Build and push to container registry
+      uses: docker/build-push-action@v2
       env:
         DOCKER_CONTENT_TRUST: 1
-      run: |
-        docker build -t ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} .
-        docker push ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
+      with:
+        context: content/lambda/
+        push: true
+        tags: |
+
+          ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}
 
     - name: Use Cosign to sign the image
       run: |
         echo -n "${{ secrets.COSIGN_PRIVATE_KEY_PASSWORD }}" | \
           cosign sign --key <(echo -n "${{ secrets.COSIGN_PRIVATE_KEY }}") \
-          "${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
+          "${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}"
 
   build-sbom-and-scanning:
     needs: [init-env, build-docker-image]
@@ -130,21 +134,21 @@ jobs:
 
       - name: Use Syft to generate the SBOM files
         run: |
-          syft -v ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} -o json > ./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+          syft -v ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }} -o json > ./${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
 
       - name: Upload Syft SBOM to artifacts
         uses: actions/upload-artifact@v2
         with:
-          path: /${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+          path: /${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
           name: "SBOM by Syft"
 
       - name: Create SBOM attestation
         run: |
           # Create SBOM attestation and push it to the container registry
           echo -n "${{ secrets.COSIGN_PRIVATE_KEY_PASSWORD }}" | \
-            cosign attest --predicate "${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}" \
+            cosign attest --predicate "${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}" \
             --key <(echo -n "${{ secrets.COSIGN_PRIVATE_KEY }}") \
-            "${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
+            "${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}"
 
       - name: Install Grype
         run: |
@@ -157,8 +161,8 @@ jobs:
       - name: Scan container by Grype
         run: |
           # May set a severity threshold for failing the build
-          grype sbom:./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o json > ./${{ steps.vars.outputs.sha_short }}-container-vulnerabilities-report-grype.json
-          grype sbom:./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o table > ./${{ steps.vars.outputs.sha_short }}-container-vulnerabilities-report-grype-table.txt
+          grype sbom:./${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o json > ./${{ needs.init-env.outputs.sha_short }}-container-vulnerabilities-report-grype.json
+          grype sbom:./${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o table > ./${{ needs.init-env.outputs.sha_short }}-container-vulnerabilities-report-grype-table.txt
 
       - name: Upload Grype reports to artifacts
         uses: actions/upload-artifact@v2
@@ -196,4 +200,4 @@ jobs:
 
     - name: Deploy Lambda
       run:
-        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --image-uri ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
+        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --image-uri ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}
