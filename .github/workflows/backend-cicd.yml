@@ -57,14 +57,18 @@ jobs:
 
     - name: Install Cosign GH action
       uses: sigstore/cosign-installer@main
-      
+
+    - name: Set outputs
+      id: vars
+      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
     - name: Build Image
       env:
         DOCKER_CONTENT_TRUST: 1
       run: |
         cd content/lambda/
-        docker build -t ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }} .
-        docker push ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}
+        docker build -t ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} .
+        docker push ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
 
     - name: Use Cosign to sign the image
       run: |
