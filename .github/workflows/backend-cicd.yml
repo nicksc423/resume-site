@@ -35,7 +35,7 @@ jobs:
       # GH action/scanners for sarif reports
       security-events: write
       statuses: none
-      # id-token: write # needed for signing the images with GitHub OIDC **not production ready**
+      id-token: write
     steps:
     - uses: actions/checkout@master
 
@@ -91,7 +91,7 @@ jobs:
       # GH action/scanners for sarif reports
       security-events: write
       statuses: none
-      # id-token: write # needed for signing the images with GitHub OIDC **not production ready**
+      id-token: write
     steps:
       - name: Checkout this repository
         # some vuln scanner want to have the Dockerfile
@@ -174,7 +174,7 @@ jobs:
     permissions:
       actions: none
       checks: none
-      contents: none
+      contents: read
       deployments: none
       issues: none
       packages: none
@@ -182,6 +182,7 @@ jobs:
       repository-projects: none
       security-events: none
       statuses: none
+      id-token: write
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
