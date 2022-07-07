@@ -7,26 +7,10 @@ on:
       - 'content/lambda/**'
   workflow_dispatch:
 
-defaults:
-  run:
-    working-directory: content/lambda/
-
 jobs:
   init-env:
     name: Set env outputs
     runs-on: ubuntu-latest
-    continue-on-error: true
-    permissions:
-      actions: none
-      checks: none
-      contents: none
-      deployments: none
-      issues: none
-      packages: none
-      pull-requests: none
-      repository-projects: none
-      security-events: none
-      statuses: none
     outputs:
       sha_short: ${{ steps.set-env.outputs.sha_short }}
     steps:
@@ -79,7 +63,7 @@ jobs:
       env:
         DOCKER_CONTENT_TRUST: 1
       with:
-        context: .
+        context: content/lambda/
         push: true
         tags: |
           ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
@@ -186,6 +170,7 @@ jobs:
           name: "Vulnerabilities reports by Grype"
 
   deploy:
+    needs: [init-env, build-docker-image, build-sbom-and-scanning]
     permissions:
       actions: none
       checks: none
