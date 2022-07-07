@@ -8,10 +8,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  # TODO: Figure out why this doesn't work.  Causing errors using the output
   init-env:
     name: Set env outputs
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       sha_short: ${{ steps.set-env.outputs.sha_short }}
     steps:
@@ -63,7 +64,10 @@ jobs:
 
     - name: Set outputs
       id: vars
-      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+      run: |
+        pwd
+        ls -al ${pwd}
+        echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
     - name: Build and push to container registry
       uses: docker/build-push-action@v2
