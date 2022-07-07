@@ -145,6 +145,8 @@ jobs:
           IMAGE: "{{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
           SHORT_SHA: "${{ steps.vars.outputs.sha_short }}"
         run: |
+          echo "$IMAGE"
+          echo "$SHORT_SHA"
           syft -v $IMAGE -o json > ./$SHORT_SHA-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
 
       - name: Upload Syft SBOM to artifacts
