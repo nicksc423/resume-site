@@ -26,7 +26,9 @@ RUN pip install \
         awslambdaric
 
 # Multi-stage build: grab a fresh copy of the base image
-FROM python:buster
+FROM python:3.9-alpine
+
+RUN apk update && apk upgrade
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
