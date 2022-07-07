@@ -12,12 +12,191 @@ defaults:
     working-directory: content/lambda/
 
 jobs:
+  init-env:
+    name: Set env outputs
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      actions: none
+      checks: none
+      contents: none
+      deployments: none
+      issues: none
+      packages: none
+      pull-requests: none
+      repository-projects: none
+      security-events: none
+      statuses: none
+    outputs:
+      sha_short: ${{ steps.set-env.outputs.sha_short }}
+    steps:
+      - name: Set env for later jobs
+        id: set-env
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+  build-docker-image:
+    needs: [init-env]
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      actions: none
+      checks: none
+      contents: read
+      deployments: none
+      issues: none
+      packages: write
+      pull-requests: none
+      repository-projects: none
+      # GH action/scanners for sarif reports
+      security-events: write
+      statuses: none
+      # id-token: write # needed for signing the images with GitHub OIDC **not production ready**
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@master
+      with:
+        role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
+        aws-region: us-east-1
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Install Cosign GH action
+      uses: sigstore/cosign-installer@main
+
+    - name: Build and push to container registry
+      uses: docker/build-push-action@v2
+      env:
+        DOCKER_CONTENT_TRUST: 1
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
+
+    - name: Use Cosign to sign the image
+      run: |
+        echo -n "${{ secrets.COSIGN_PRIVATE_KEY_PASSWORD }}" | \
+          cosign sign --key <(echo -n "${{ secrets.COSIGN_PRIVATE_KEY }}") \
+          "${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
+
+  build-sbom-and-scanning:
+    needs: [init-env, publish-with-crossbuild, build-docker-image]
+    name: Build SBOM and image scanning
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      actions: none
+      checks: none
+      contents: read
+      deployments: none
+      issues: none
+      packages: write
+      pull-requests: none
+      repository-projects: none
+      # GH action/scanners for sarif reports
+      security-events: write
+      statuses: none
+      # id-token: write # needed for signing the images with GitHub OIDC **not production ready**
+    steps:
+      - name: Checkout this repository
+        # some vuln scanner want to have the Dockerfile
+        uses: actions/checkout@master
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_IAM_ROLE }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Install Cosign GH action
+        uses: sigstore/cosign-installer@main
+
+      - name: "Fetch branch name of latest release versions Other software"
+        run: |
+          curl -sL https://api.github.com/repos/anchore/syft/releases | \
+            jq -r ".[].tag_name" | grep -v rc | sort -r -V | head -n 1 | sed -E 's|^v||' > /tmp/syft-latest-branch-name
+          echo "SYFT_VERSION=$(cat /tmp/syft-latest-branch-name)" >> $GITHUB_ENV
+          curl -sL https://api.github.com/repos/anchore/grype/releases | \
+            jq -r ".[].tag_name" | grep -v rc | sort -r -V | head -n 1 | sed -E 's|^v||' > /tmp/grype-latest-branch-name
+          echo "GRYPE_VERSION=$(cat /tmp/grype-latest-branch-name)" >> $GITHUB_ENV
+
+      - name: Install Syft
+        run: |
+          cd /tmp
+          curl -L -O -v https://github.com/anchore/syft/releases/download/v${{env.SYFT_VERSION}}/syft_${{env.SYFT_VERSION}}_linux_amd64.deb
+          curl -L -O -v https://github.com/anchore/syft/releases/download/v${{env.SYFT_VERSION}}/syft_${{env.SYFT_VERSION}}_checksums.txt
+          sha256sum -c syft_${{env.SYFT_VERSION}}_checksums.txt --ignore-missing
+          sudo dpkg -i syft_${{env.SYFT_VERSION}}_linux_amd64.deb
+
+      - name: Set the SBOM env variable for use by later steps
+        run: |
+          echo "ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT=container-sbom.json" >> $GITHUB_ENV
+
+      - name: Use Syft to generate the SBOM files
+        run: |
+          syft -v ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} -o json > ./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+
+      - name: Upload Syft SBOM to artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          path: /${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+          name: "SBOM by Syft"
+
+      - name: Create SBOM attestation
+        run: |
+          # Create SBOM attestation and push it to the container registry
+          echo -n "${{ secrets.COSIGN_PRIVATE_KEY_PASSWORD }}" | \
+            cosign attest --predicate "${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}" \
+            --key <(echo -n "${{ secrets.COSIGN_PRIVATE_KEY }}") \
+            "${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
+
+      - name: Install Grype
+        run: |
+          cd /tmp
+          curl -L -O -v https://github.com/anchore/grype/releases/download/v${{env.GRYPE_VERSION}}/grype_${{env.GRYPE_VERSION}}_linux_amd64.deb
+          curl -L -O -v https://github.com/anchore/grype/releases/download/v${{env.GRYPE_VERSION}}/grype_${{env.GRYPE_VERSION}}_checksums.txt
+          sha256sum -c grype_${{env.GRYPE_VERSION}}_checksums.txt --ignore-missing
+          sudo dpkg -i grype_${{env.GRYPE_VERSION}}_linux_amd64.deb
+
+      - name: Scan container by Grype
+        run: |
+          # May set a severity threshold for failing the build
+          grype sbom:./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o json > ./${{ steps.vars.outputs.sha_short }}-container-vulnerabilities-report-grype.json
+          grype sbom:./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o table > ./${{ steps.vars.outputs.sha_short }}-container-vulnerabilities-report-grype-table.txt
+
+      - name: Upload Grype reports to artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          path: ./*vulnerabilities-report-grype*
+          name: "Vulnerabilities reports by Grype"
+
   deploy:
     permissions:
-      contents: read
-      packages: write
-      id-token: write
-      security-events: write
+      actions: none
+      checks: none
+      contents: none
+      deployments: none
+      issues: none
+      packages: none
+      pull-requests: none
+      repository-projects: none
+      security-events: none
+      statuses: none
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -32,36 +211,6 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Set outputs
-      id: vars
-      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-
-    - name: Build Image
-      run: |
-        docker build -t ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} .
-        docker push ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
-
-    - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Snapshots
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'image'
-        format: 'github'
-        output: 'dependency-results.sbom.json'
-        image-ref: ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
-        github-pat: ${{ secrets.GH_PAT }}
-
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: 'trivy-results.sarif'
-
-    - name: Update Lambda
+    - name: Deploy Lambda
       run:
         aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --image-uri ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
