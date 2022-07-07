@@ -12,8 +12,18 @@ jobs:
     name: Set env outputs
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      actions: none
+      checks: none
       contents: read
+      deployments: none
+      issues: none
+      packages: write
+      pull-requests: none
+      repository-projects: none
+      # GH action/scanners for sarif reports
+      security-events: write
+      statuses: none
+      id-token: write
     outputs:
       sha_short: ${{ steps.set-env.outputs.sha_short }}
     steps:
