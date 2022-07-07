@@ -18,6 +18,8 @@ jobs:
       - name: Set env for later jobs
         id: set-env
         run: |
+          pwd
+          ls -al ${pwd}
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
   build-docker-image:
@@ -142,7 +144,7 @@ jobs:
 
       - name: Use Syft to generate the SBOM files
         env:
-          IMAGE: "{{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
+          IMAGE: "${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
           SHORT_SHA: "${{ steps.vars.outputs.sha_short }}"
         run: |
           echo "$IMAGE"
