@@ -137,20 +137,13 @@ jobs:
           echo "ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT=container-sbom.json" >> $GITHUB_ENV
 
       - name: Use Syft to generate the SBOM files
-        env:
-          IMAGE: "${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}"
-          SHORT_SHA: "${{ needs.init-env.outputs.sha_short }}"
-        run: |
-          echo "$IMAGE"
-          echo "$SHORT_SHA"
-          syft -v $IMAGE -o json > ./$SHORT_SHA-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+        run:
+          syft -v ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }} -o json > ./${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
 
       - name: Upload Syft SBOM to artifacts
         uses: actions/upload-artifact@v2
-        env:
-          SHORT_SHA: "${{ needs.init-env.outputs.sha_short }}"
         with:
-          path: /$SHORT_SHA-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+          path: /${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
           name: "SBOM by Syft"
 
       - name: Create SBOM attestation
