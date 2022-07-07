@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # TODO: Figure out why this doesn't work.  Causing errors using the tag
+  # TODO: Figure out why this doesn't work.  Causing errors using the output
   init-env:
     name: Set env outputs
     runs-on: ubuntu-latest
@@ -141,13 +141,18 @@ jobs:
           echo "ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT=container-sbom.json" >> $GITHUB_ENV
 
       - name: Use Syft to generate the SBOM files
+        env:
+          IMAGE: "{{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
+          SHORT_SHA: "${{ steps.vars.outputs.sha_short }}"
         run: |
-          syft -v ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} -o json > ./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+          syft -v $IMAGE -o json > ./$SHORT_SHA-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
 
       - name: Upload Syft SBOM to artifacts
         uses: actions/upload-artifact@v2
+        env:
+          SHORT_SHA: "${{ steps.vars.outputs.sha_short }}"
         with:
-          path: /${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+          path: /$SHORT_SHA-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
           name: "SBOM by Syft"
 
       - name: Create SBOM attestation
@@ -197,7 +202,7 @@ jobs:
     - name: Set outputs
       id: vars
       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-      
+
     - uses: actions/checkout@master
 
     - name: Configure AWS Credentials
