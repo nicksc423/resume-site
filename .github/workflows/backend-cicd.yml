@@ -57,17 +57,14 @@ jobs:
 
     - name: Install Cosign GH action
       uses: sigstore/cosign-installer@main
-
-    - name: Build and push to container registry
-      uses: docker/build-push-action@v2
+      
+    - name: Build Image
       env:
         DOCKER_CONTENT_TRUST: 1
-      with:
-        context: content/lambda/
-        push: true
-        tags: |
-
-          ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}
+      run: |
+        cd content/lambda/
+        docker build -t ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }} .
+        docker push ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}
 
     - name: Use Cosign to sign the image
       run: |
