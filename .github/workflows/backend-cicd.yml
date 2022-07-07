@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # TODO: Figure out why this doesn't work.  Causing errors using the tag
   init-env:
     name: Set env outputs
     runs-on: ubuntu-latest
@@ -97,6 +98,10 @@ jobs:
       statuses: none
       id-token: write
     steps:
+      - name: Set outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
       - name: Checkout this repository
         # some vuln scanner want to have the Dockerfile
         uses: actions/checkout@master
@@ -137,21 +142,21 @@ jobs:
 
       - name: Use Syft to generate the SBOM files
         run: |
-          syft -v ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }} -o json > ./${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+          syft -v ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }} -o json > ./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
 
       - name: Upload Syft SBOM to artifacts
         uses: actions/upload-artifact@v2
         with:
-          path: /${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
+          path: /${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}
           name: "SBOM by Syft"
 
       - name: Create SBOM attestation
         run: |
           # Create SBOM attestation and push it to the container registry
           echo -n "${{ secrets.COSIGN_PRIVATE_KEY_PASSWORD }}" | \
-            cosign attest --predicate "${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}" \
+            cosign attest --predicate "${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}}" \
             --key <(echo -n "${{ secrets.COSIGN_PRIVATE_KEY }}") \
-            "${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}"
+            "${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
 
       - name: Install Grype
         run: |
@@ -164,8 +169,8 @@ jobs:
       - name: Scan container by Grype
         run: |
           # May set a severity threshold for failing the build
-          grype sbom:./${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o json > ./${{ needs.init-env.outputs.sha_short }}-container-vulnerabilities-report-grype.json
-          grype sbom:./${{ needs.init-env.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o table > ./${{ needs.init-env.outputs.sha_short }}-container-vulnerabilities-report-grype-table.txt
+          grype sbom:./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o json > ./${{ steps.vars.outputs.sha_short }}-container-vulnerabilities-report-grype.json
+          grype sbom:./${{ steps.vars.outputs.sha_short }}-${{env.ANCHORE_SBOM_ACTION_PRIOR_ARTIFACT}} -o table > ./${{ steps.vars.outputs.sha_short }}-container-vulnerabilities-report-grype-table.txt
 
       - name: Upload Grype reports to artifacts
         uses: actions/upload-artifact@v2
@@ -189,6 +194,10 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
+    - name: Set outputs
+      id: vars
+      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+      
     - uses: actions/checkout@master
 
     - name: Configure AWS Credentials
@@ -203,4 +212,4 @@ jobs:
 
     - name: Deploy Lambda
       run:
-        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --image-uri ${{ secrets.ECR_URL }}:${{ needs.init-env.outputs.sha_short }}
+        aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME }} --image-uri ${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}
