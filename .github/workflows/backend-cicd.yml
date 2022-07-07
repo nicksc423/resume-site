@@ -91,7 +91,7 @@ jobs:
           "${{ secrets.ECR_URL }}:${{ steps.vars.outputs.sha_short }}"
 
   build-sbom-and-scanning:
-    needs: [init-env, publish-with-crossbuild, build-docker-image]
+    needs: [init-env, build-docker-image]
     name: Build SBOM and image scanning
     runs-on: ubuntu-latest
     continue-on-error: true
