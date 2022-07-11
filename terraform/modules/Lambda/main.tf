@@ -11,6 +11,13 @@ resource "aws_lambda_function" "lambda" {
   tags = {
     permit-github-action = "true"
   }
+
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to the image uri
+      image_uri
+    ]
+  }
 }
 
 resource "aws_iam_role" "lambda_role" {
