@@ -30,6 +30,13 @@ resource null_resource ecr_image {
            docker push ${aws_ecr_repository.repo.repository_url}:init
        EOF
  }
+
+ lifecycle {
+   ignore_changes = [
+     # Ignore changes to image
+     triggers
+   ]
+ }
 }
 
 data aws_ecr_image lambda_image {
