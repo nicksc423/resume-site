@@ -2,7 +2,7 @@
 <html>
 <head>
 
-	<title>Nick Collins | DevOps Engineer | name@yourdomain.com</title>
+	<title>Nick Collins | DevOps Engineer | nicksc423@gmail.com</title>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
 	<meta name="keywords" content="" />
@@ -40,19 +40,76 @@
 				<div class="yui-b">
           <div class="yui">
 						<div class="yui-u about">
-							<h2>About This Site</h2>
+							<h1>About This Site</h1>
 							<div class="yui-u">
 								<p>
-									This site was made to not only show my resume but also to display some of the DevOps techniques that I have learned over the years.
+								This site was made to not only show my resume but also to display some of the DevOps techniques that I have learned over the years.
+								</p>
+								<h2>
+								Infrastructure Overview
+								</h2>
+								<p>
+								This website is entirely hosted in the AWS cloud where it is made up of an S3 bucket, a Cloudfront distribution, a containerized python function running in AWS Lambda, a DynamoDB Database, an API Gateway, and a few DNS records and an SSL cert managed by Route53. While this is a greatly simplified implementation of what is possible with the cloud it serves as a good project to demonstrate some of my skills.
 								</p>
 								<p>
-									This website is entirely hosted in the AWS cloud where it is made up of multiple s3 buckets, a cloudfront CDN, a Lambda function, a DynamoDB Database, an API Gateway, a few DNS records, and an SSL cert managed by Route53.  While this is a greatly simplified implementation of what is possible with the cloud, it serves as a good example of what is possible.  We are able to safely and securely serve static content with S3 and Cloudfront while making API calls to a backend service with APIGatway.  This backend service is able to run all without having to manage any virtual machines.  All of this is provisioned via Terraform scripts so that I can safely and predictably create, change, and improve any infrastructure in AWS as I need.
+								All of this is provisioned via Terraform scripts so that I can safely and predictably create, change, and improve any infrastructure in AWS as the need arises.  Terraform (and infrastructure as code by extension) greatly helps with lowering cost, increasing speed, and Lowering risk.
 								</p>
 								<p>
-									Terraform (and infrastructure as code by extension) greatly helps with cost, speed, and risk.  The cost reduction comes from removing the manual component of privioning infrastructure, devs are able to focus their efforts on their tasks rather than wrangling infrastrcture.  Automating the provisioning of infrastructure also enables speed through faster execution, with a well defined Terraform module creating a properly configured virtual machine, kubernetes cluster, or databse becomes a trivial task. Automation also removes the risk associated with human error, like manual misconfiguration; removing this can decrease downtime and increase reliability. In addition defining all of your infrastrcture through code can help provide visibility into your cloud environment allowing you to track and organize your projects effectivly.
+								The cost reduction comes from removing the manual component of provisioning infrastructure, devs are able to focus their efforts on their tasks rather than wrangling infrastructure. System performance is improved though automating the provisioning of the infrastructure, with a well defined Terraform module creating a properly configured virtual machine, kubernetes cluster, or database. It becomes a trivial task.  Risk is reduced because automation also removes human error like manual misconfiguration which helps to decrease downtime and increase reliability. In addition, defining all of the infrastructure through code can help provide visibility into the cloud environment allowing you to track and organize your projects effectively.
 								</p>
 								<p>
-									All of the code for this website can be found on my Github <a href="https://github.com/nicksc423/resume-site">here</a> if you want a more in-depth look.
+								I serve the static content of this website with S3 and Cloudfront.  S3 is AWS’s simple storage solution which is where all the HTML and CSS files are stored,  It is configured in such a way that public access to the files is restricted and they can only be retrieved via Cloudfront.  Cloudfront is a low latency CDN offered by AWS. I use Cloudfront to cache and distribute the static content so I can safely and securely host this website with low latency and low costs.
+								</p>
+								<p>
+								At the bottom of the resume I have a simple view counter which acts as a simplified backend service.  It is meant to simulate communicating to a backend service from the frontend web pages.  This is achieved through the combination AWS’s APIGateway, Lambda, and DynamoDB.
+								</p>
+								<p>
+								APIGateway is a fully managed service that makes it easy to create, publish, maintain, monitor, and secure APIs. API Gateway handles all the tasks involved in accepting and processing API calls, including traffic management, CORS support, authorization and access control, throttling, monitoring, and API version management.
+								</p>
+								<p>
+								AWS Lambda is a service that lets you run code without provisioning or managing servers. Lambda runs code on Amazon’s infrastructure and performs all of the administration for you, including server and operating system maintenance, capacity provisioning and automatic scaling, code monitoring and logging.
+								</p>
+								<p>
+								DynamoDB is a fully managed, serverless, key-value NoSQL database designed to run high-performance applications at any scale. DynamoDB offers built-in security, continuous backups, automated multi-Region replication, in-memory caching, and data export tools.
+								</p>
+								<p>
+								Using these three services in conjunction I made the simulated backend service. I use API Gateway to make a RESTful API that is able to execute my Lambda.  My Lambda is a small bit of Python code which when executed connects to my DynamoDB and runs a simple query to retrieve and increment the view count. This backend service is able to run without having any virtual machines to manage which makes it cheap and easy to use.
+								</p>
+								<p>
+								Finally, I needed a Domain and an SSL cert to host this site.  Wanting to stay within the AWS environment I registered my domain with Route53, AWS’s DNS service.  I also have a wildcard SSL cert registered within AWS so I can host the site using HTTPS.
+								</p>
+								<p>
+								With all this done I now have a full website!  The front end is made up of static content stored in S3 and served via Cloudfront.  The backend is an APIGateway fronting an AWS Lambda which in turn retrieves data from a DynamoDB table.
+								</p>
+								<h2>
+								Securing the Supply Chain
+								</h2>
+								<p>
+								Having built this whole website I wanted to put a special emphasis on security.  Security has become more and more the domain of DevOps and I wanted to learn and educate myself about what tools I can use to increase my security posture.
+								</p>
+								<p>
+								One of the first things I did was to require commits to my repository to be signed using GPG.  This ensures that the author is really the person whose name is on the commit and that the code change you see is really what the author wrote (i.e. it has not been tampered with).
+								</p>
+								<p>
+								Next I set up GitHub’s own automated code scanning, CodeQL. This will allow GitHub to scan the code in my repository and check it against any known CVEs to let me know if I have any unpatched vulnerabilities.  I automatically run the code scan any time a pull request is merged to the  main branch and fail the merge if security issues at level “High” or “Critical”  are detected. To guard against dependency decay I automated the scan to run on a schedule once per month.
+								</p>
+								<p>
+								Then I wanted to sign the container image using Cosign.  Cosign is a command line tool that allows you to sign containers so you can ensure that  the container that you run is the exact container you expect and has not been modified.  Cosign does this by uploading a .sig file to my container registry which can be verified using the public key uploaded with my Lambda code.
+								</p>
+								<p>
+								Following this I looked into creating a Software Bill of Materials (SBOM) using Syft.  An SBOM is a manifest that lists all the packages shipped in your container image.  Using Syft I make an “SBOM attestation file” which attests to what is included in the image.  I sign this file with Cosign and upload it to the image repository as well.  This attestation file can be verified by cosign as well which ensures that nothing else has been inserted into our image.
+								</p>
+								<p>
+								I also want to make sure that none of the other packages shipped in the container have any vulnerabilities as well.  I use Grype, a vulnerability scanning tool by Anchore, which reads the SBOM and runs vulnerability scans against all packages included within it.
+								</p>
+								<p>
+								With all this done I have secured the software supply chain.  I can verify that the image is exactly what I built using Cosign and verifying the image.  I can be sure that everything within the image is what I expect by verifying the attestation file.  I also know that none of the dependencies within the container image have any significant vulnerabilities.  I also know that anything I've added to the image does not have any significant vulnerabilities thanks to GitHub's CodeQL scanning.  I will also be alerted to any new vulnerabilies since CodeQL will automatically scan my repository once a month.
+								</p>
+								<p>
+								In conclusion I feel that this website is a great display some of the DevOps techniques that I have learned over the years.  I have been able to demonstrate my understanding of the cloud, implement concepts like infrastructure as Code, and utilize security tools to secure my software supply chain.
+								</p>
+								<p>
+								All of the code for this website can be found on my Github <a href="https://github.com/nicksc423/resume-site">here</a> if you want a more in-depth look.
 								</p>
 							</div>
 						</div><!--// .yui-u about -->

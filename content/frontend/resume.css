@@ -16,6 +16,7 @@ body { font-family: Georgia; color: #444; }
 
 /* //-- core typography and style -- */
 #hd h1 { font-size: 48px; text-transform: uppercase; letter-spacing: 3px; }
+h1 { font-size: 205% }
 h2 { font-size: 152% }
 h3, h4 { display: inline-block; font-size: 122%; }
 h1, h2, h3, h4 { color: #333; }
@@ -42,12 +43,13 @@ a#about:hover { background: #222; }
 .job li { list-style-type: disc; border-bottom: none }
 
 .last { border: none; }
-.skills-list { width: 25%; float: left }
+.skills-list { width: 20%; float: left }
 .skills-list h2 { margin-bottom: 6px; }
 .skills-list ul { margin: 0; display: inline-block; width: 75%;}
 .skills-list li { margin: 3px 0; padding: 3px 0; width: 100%; }
 .skills-list li span { font-size: 152%; display: block; margin-bottom: -2px; padding: 0 }
 
+.about h1 { text-align: center; font-style: italic; }
 .about h2 { text-align: center; font-style: italic; }
 .about p { padding-bottom: 15px }
 
