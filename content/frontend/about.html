@@ -97,22 +97,22 @@
 								Then I wanted to sign the container image using Cosign.  Cosign is a command line tool that allows you to sign containers so you can ensure that  the container that you run is the exact container you expect and has not been modified.  Cosign does this by uploading a .sig file to my container registry which can be verified using the public key uploaded with my Lambda code.
 								</p>
 								<p>
-								Following this I looked into creating a Software Bill of Materials (SBOM) using Syft.  An SBOM is a manifest that lists all the packages shipped in your container image.  Using Syft I make an “SBOM attestation file” which attests to what is included in the image.  I sign this file with Cosign and upload it to the image repository as well.  This attestation file can be verified by cosign as well which ensures that nothing else has been inserted into our image.
+								Following this I looked into creating a Software Bill of Materials (SBOM) using Syft.  An SBOM is a manifest that lists all the packages shipped in your container image.  Using Syft I make an “SBOM attestation file” which attests to what is included in the image.  I sign this file with Cosign and upload it to the image repository as well.  This attestation file can be verified by cosign as well which ensures that nothing else has been inserted into the image.
 								</p>
 								<p>
 								I also want to make sure that none of the other packages shipped in the container have any vulnerabilities as well.  I use Grype, a vulnerability scanning tool by Anchore, which reads the SBOM and runs vulnerability scans against all packages included within it.
 								</p>
 								<p>
-								With all this done I have secured the software supply chain.  I can verify that the image is exactly what I built using Cosign and verifying the image.  I can be sure that everything within the image is what I expect by verifying the attestation file.  I also know that none of the dependencies within the container image have any significant vulnerabilities.  I also know that anything I've added to the image does not have any significant vulnerabilities thanks to GitHub's CodeQL scanning.  I will also be alerted to any new vulnerabilies since CodeQL will automatically scan my repository once a month.
+								With all this completed I have secured the software supply chain.  I can verify that the python container is exactly what I built using Cosign.  Addionally, Cosign can verify the attestation file ensuring the container has only the expected packages.  Using Grype I know that none of the dependencies within the container image have any significant vulnerabilities.  Using GitHub's CodeQL scanning I know that anything I have added to the image does not have any significant vulnerabilities.  CodeQL will automatically scan my repository once a month so I will also be alerted to any new vulnerabilies discovered.
 								</p>
 								<h2>
-								Final Words
+								Conclusion
 								</h2>
 								<p>
-								I feel that this website is a great display some of the DevOps techniques that I have learned over the years.  This site serves to demonstrate my understanding of the cloud, implement concepts like infrastructure as Code, and utilize security tools to secure my software supply chain.
+								I feel that this website is a comprehensive display some of the DevOps techniques that I have learned over the years.  I have been able to demonstrate my understanding of the cloud, implement concepts like Infrastructure as Code, and utilize security tools to secure my software supply chain.
 								</p>
 								<p>
-								All of the code for this website can be found on my Github <a href="https://github.com/nicksc423/resume-site">here</a> if you want a more in-depth look.
+								All of the code for this website can be found on my Github <a href="https://github.com/nicksc423/resume-site">here</a> if you'd like a more in-depth look.
 								</p>
 							</div>
 						</div><!--// .yui-u about -->
